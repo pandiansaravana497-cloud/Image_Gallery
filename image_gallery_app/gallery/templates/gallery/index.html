@@ -1,0 +1,170 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Interactive Image Gallery</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="{% static 'css/style.css' %}"/>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════
+     HEADER
+═══════════════════════════════════ -->
+<header class="site-header">
+  <div class="header-inner">
+    <div class="header-brand">
+      <div class="brand-dot"></div>
+      <span class="brand-name">Gallery<em>Lab</em></span>
+    </div>
+    <nav class="header-nav">
+      <span class="nav-stat"><strong id="nav-showing">{{ total }}</strong> images</span>
+      <button class="hbtn" id="autoplay-btn" title="Toggle autoplay (Space)">
+        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="5,3 19,12 5,21" id="play-icon-poly"/></svg>
+        <span id="autoplay-label">Autoplay</span>
+      </button>
+      <button class="hbtn hbtn--accent" id="fullscreen-btn" title="Open fullscreen (F)">
+        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <polyline points="15,3 21,3 21,9"/><polyline points="9,21 3,21 3,15"/>
+          <line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/>
+        </svg>
+        <span>Fullscreen</span>
+      </button>
+    </nav>
+  </div>
+</header>
+
+<!-- ═══════════════════════════════════
+     MAIN LAYOUT
+═══════════════════════════════════ -->
+<main class="app-main">
+
+  <!-- ── Sidebar ── -->
+  <aside class="sidebar">
+    <div class="sidebar-section">
+      <h3 class="sidebar-heading">Categories</h3>
+      <div class="filter-list" id="filter-list">
+        <button class="filter-btn active" data-cat="All">
+          <span class="filter-dot"></span>All
+          <span class="filter-count">{{ total }}</span>
+        </button>
+        {% for cat in categories %}
+        <button class="filter-btn" data-cat="{{ cat }}">
+          <span class="filter-dot"></span>{{ cat }}
+        </button>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <h3 class="sidebar-heading">Info</h3>
+      <div class="info-table">
+        <div class="info-row"><span>Title</span><strong id="sb-title">—</strong></div>
+        <div class="info-row"><span>Category</span><strong id="sb-cat">—</strong></div>
+        <div class="info-row"><span>Slide</span><strong id="sb-idx">—</strong></div>
+        <div class="info-row"><span>Total</span><strong id="sb-total">{{ total }}</strong></div>
+      </div>
+    </div>
+
+    <div class="sidebar-section sidebar-section--keys">
+      <h3 class="sidebar-heading">Shortcuts</h3>
+      <div class="key-list">
+        <div class="key-row"><kbd>← →</kbd><span>Navigate</span></div>
+        <div class="key-row"><kbd>Space</kbd><span>Autoplay</span></div>
+        <div class="key-row"><kbd>F</kbd><span>Fullscreen</span></div>
+        <div class="key-row"><kbd>Esc</kbd><span>Close</span></div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ── Gallery Stage ── -->
+  <section class="gallery-stage">
+
+    <!-- Main viewer -->
+    <div class="viewer" id="viewer">
+      <div class="slides-wrap" id="slides-wrap">
+        <!-- Slides injected by JS from Django context -->
+      </div>
+
+      <!-- Arrows -->
+      <button class="v-arrow v-arrow--prev" id="btn-prev" aria-label="Previous slide">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15,18 9,12 15,6"/></svg>
+      </button>
+      <button class="v-arrow v-arrow--next" id="btn-next" aria-label="Next slide">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9,6 15,12 9,18"/></svg>
+      </button>
+
+      <!-- Counter -->
+      <div class="v-counter" id="v-counter">1 / {{ total }}</div>
+
+      <!-- Progress bar -->
+      <div class="v-progress"><div class="v-progress-fill" id="progress-fill"></div></div>
+    </div>
+
+    <!-- Caption bar -->
+    <div class="caption-bar">
+      <div class="caption-text">
+        <h2 class="caption-title" id="cap-title">Loading…</h2>
+        <p class="caption-desc" id="cap-desc"></p>
+      </div>
+      <div class="caption-actions">
+        <button class="icon-btn" id="btn-prev2" aria-label="Previous">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="15,18 9,12 15,6"/></svg>
+          Prev
+        </button>
+        <button class="icon-btn icon-btn--accent" id="btn-next2" aria-label="Next">
+          Next
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="9,6 15,12 9,18"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Dots -->
+    <div class="dots-bar" id="dots-bar"></div>
+
+    <!-- Thumbnails -->
+    <div class="thumbs-strip" id="thumbs-strip"></div>
+
+  </section>
+</main>
+
+<!-- ═══════════════════════════════════
+     FULLSCREEN OVERLAY
+═══════════════════════════════════ -->
+<div class="fs-overlay" id="fs-overlay" role="dialog" aria-modal="true" aria-label="Fullscreen viewer">
+  <button class="fs-close" id="fs-close" aria-label="Close">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+  </button>
+  <div class="fs-stage">
+    <button class="fs-arr fs-arr--prev" id="fs-prev" aria-label="Previous">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15,18 9,12 15,6"/></svg>
+    </button>
+    <div class="fs-img-wrap">
+      <img class="fs-img" id="fs-img" src="" alt=""/>
+    </div>
+    <button class="fs-arr fs-arr--next" id="fs-next" aria-label="Next">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9,6 15,12 9,18"/></svg>
+    </button>
+  </div>
+  <div class="fs-caption">
+    <h2 id="fs-title"></h2>
+    <p id="fs-desc"></p>
+    <span class="fs-badge" id="fs-cat"></span>
+  </div>
+  <div class="fs-dots" id="fs-dots"></div>
+</div>
+
+<!-- ═══════════════════════════════════
+     Django passes image data to JS
+═══════════════════════════════════ -->
+<script>
+  const GALLERY_DATA = {{ images|safe }};
+</script>
+<script src="{% static 'js/script.js' %}"></script>
+
+</body>
+</html>
